@@ -6,6 +6,7 @@ import json
 import time
 import progressbar
 import pynotifier
+import random
 
 from foundation import Foundation
 
@@ -17,24 +18,30 @@ if not os.path.exists("data/data.json"):
         file.close()
 
 game = None
+foundation = Foundation()
 
 SECOND = 1
 MINUTE = SECOND * 60
 HOUR = MINUTE * 60
 
+
 def load():
     with open("data/data.json") as dataFile:
         global game
         game = json.load(dataFile)
+
+
 def save():
     with open("data/data.json", "w") as dataFile:
         json.dump(game, dataFile)
+
 
 def clear():
     if os.name == "nt":
         os.system("cls")
     else:
         os.system("clear")
+
 
 def initGame():
     game["name"] = input("Enter your username: ")
@@ -53,6 +60,7 @@ def initGame():
         "chestNormal": 0
     }
 
+
 def craftChest():
     print("Crafting a chest needs 10 minutes.\nProeed?")
     option = input("(y/n) > ")
@@ -67,22 +75,58 @@ def craftChest():
         )
         print("Chest has been crafted! (Enter to claim)")
         input()
-        game["inventory"]["chestNormal"] =+ 1
+        game["inventory"]["chestNormal"] = + 1
 
-def openChest():
-    # for i in progressbar.progressbar(range(10)):
-    #     time.sleep(SECOND / 2)
-    # TODO: openChest function
-    pass
+
+def openChest(chestType):
+    for i in progressbar.progressbar(range(10)):
+        time.sleep(SECOND / 5)
+    loot = random.choice(foundation.champions)
+    chance = random.random()
+    if chance > .2:
+        loot = random.choice(loot["skins"])
+        if random.random() > .8:
+            lootType = "skin permanent"
+            game["inventory"]["skins"].append({
+                "name": loot["name"],
+                "status": "permanent"
+            })
+        else:
+            lootType = "skin shard"
+            game["inventory"]["skins"].append({
+                "name": loot["name"],
+                "status": "shard"
+            })
+    else:
+        if random.random() > .2:
+            lootType = "champion shard"
+            game["inventory"]["champions"].append({
+                "name": loot["name"],
+                "status": "shard"
+            })
+        else:
+            lootType = "champion permanent"
+            game["inventory"]["champions"].append({
+                "name": loot["name"],
+                "status": "permanent"
+            })
+    print("You just got", loot["name"], lootType)
+    if random.random() > .9:
+        print("You just got an extra chest!")
+    else:
+        game["inventory"][chestType] -= 1
+    save()
+
 
 def openInventory():
     while True:
         clear()
-        print("Blue essence: " + str(game["currency"]["blueEssence"]))
-        print("Red essence: " + str(game["currency"]["redEssence"]))
-        print("Black Essence: " + str(game["currency"]["blackEssence"]))
-        print("Chests: " + str(game["inventory"]["chestNormal"]))
-        print("Skins: " + str(len(game["inventory"]["skins"])))
+        print("Blue essence:", str(game["currency"]["blueEssence"]))
+        print("Red essence:", str(game["currency"]["redEssence"]))
+        print("Black Essence:", str(game["currency"]["blackEssence"]))
+        print("Chests:", str(game["inventory"]["chestNormal"]))
+        print("Champions:", str(len(game["inventory"]["champions"])))
+        print("Skins:" + str(len(game["inventory"]["skins"])))
         print()
         print("What do you want to do?")
         print("1. Unlock chests")
@@ -96,7 +140,7 @@ def openInventory():
                 print("Invalid number")
                 continue
             for i in range(toOpen):
-                openChest()
+                openChest("chestNormal")
                 input()
         elif option == "2":
             i = 0
@@ -127,39 +171,54 @@ def openInventory():
         else:
             print("Invalid option!")
 
+
 def openShop():
     # TOOD: openShop function
     pass
+
 
 load()
 if game == {} or game == None:
     initGame()
     save()
+
 # TODO: figlet title (pyfiglet)
-while True:
-    clear()
-    print("What do you want to do?")
-    print("1. Craft a chest")
-    print("2. View inventory")
-    print("3. Shop")
-    print("4. Clear progress")
-    print("0. Exit")
-    option = input("> ")
-    if option == "1":
-        craftChest()
-    elif option == "2":
-        openInventory()
-    elif option == "3":
-        openShop()
-    elif option == "4":
-        print("WARNING! You are about to delete all of your progress")
-        print("Please confirm your action by typing CONFIRM")
-        if input("> ") == "CONFIRM":
-            os.rmdir("data")
-            print("Data removed")
-            time.sleep(3)
+
+
+def main():
+    while True:
+        clear()
+        print("What do you want to do?")
+        print("1. Craft a chest")
+        print("2. View inventory")
+        print("3. Shop")
+        print("4. Clear progress")
+        print("0. Exit")
+        option = input("> ")
+        if option == "1":
+            craftChest()
+        elif option == "2":
+            openInventory()
+        elif option == "3":
+            openShop()
+        elif option == "4":
+            print("WARNING! You are about to delete all of your progress")
+            print("Please confirm your action by typing CONFIRM")
+            if input("> ") == "CONFIRM":
+                os.rmdir("data")
+                print("Data removed")
+                time.sleep(3)
+                exit()
+        elif option == "0":
+            save()
+            clear()
             exit()
-    elif option == "0":
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
         save()
         clear()
         exit()
